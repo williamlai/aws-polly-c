@@ -77,7 +77,6 @@ static int prvInitPollyServiceParameter(PollyServiceParameter_t *pServPara)
     pServPara->pService = AWS_POLLY_SERVICE_NAME;
     snprintf(pPollyHostName, MAX_HOST_NAME_LEN, "%s.%s.amazonaws.com", AWS_POLLY_SERVICE_NAME, pServPara->pRegion);
     pServPara->pHost = pPollyHostName;
-    pServPara->uSendTimeoutMs = 1000;
     pServPara->uRecvTimeoutMs = 1000;
 
     return 0;

@@ -85,14 +85,6 @@ int NetIo_send(NetIoHandle xNetIoHandle, const unsigned char *pBuffer, size_t uB
 int NetIo_recv(NetIoHandle xNetIoHandle, unsigned char *pBuffer, size_t uBufferSize, size_t *puBytesReceived);
 
 /**
- * @brief Check if any data available
- *
- * @param xNetIoHandle The network I/O handle
- * @return true if data available, false otherwise
- */
-bool NetIo_isDataAvailable(NetIoHandle xNetIoHandle);
-
-/**
  * @brief Configure receive timeout.
  *
  * @param xNetIoHandle The network I/O handle
@@ -100,14 +92,5 @@ bool NetIo_isDataAvailable(NetIoHandle xNetIoHandle);
  * @return 0 on success, non-zero value otherwise
  */
 int NetIo_setRecvTimeout(NetIoHandle xNetIoHandle, unsigned int uRecvTimeoutMs);
-
-/**
- * @brief Configure send timeout.
- *
- * @param xNetIoHandle The network I/O handle
- * @param uSendTimeoutMs Send timeout in milliseconds
- * @return 0 on success, non-zero value otherwise
- */
-int NetIo_setSendTimeout(NetIoHandle xNetIoHandle, unsigned int uSendTimeoutMs);
 
 #endif /* NETIO_H */

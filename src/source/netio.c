@@ -19,9 +19,6 @@
 #include <string.h>
 #include <stdbool.h>
 
-#include <sys/time.h>
-#include <sys/socket.h>
-
 /* Third party headers */
 #include "mbedtls/ctr_drbg.h"
 #include "mbedtls/entropy.h"
@@ -48,7 +45,6 @@ typedef struct NetIo
 
     /* Options */
     uint32_t uRecvTimeoutMs;
-    uint32_t uSendTimeoutMs;
 } NetIo_t;
 
 static int prvCreateX509Cert(NetIo_t *pxNet)
@@ -96,7 +92,6 @@ static int prvInitConfig(NetIo_t *pxNet, const char *pcRootCA, const char *pcCer
         {
             mbedtls_ssl_conf_rng(&(pxNet->xConf), mbedtls_ctr_drbg_random, &(pxNet->xCtrDrbg));
             mbedtls_ssl_conf_read_timeout(&(pxNet->xConf), pxNet->uRecvTimeoutMs);
-            NetIo_setSendTimeout(pxNet, pxNet->uSendTimeoutMs);
 
             if (pcRootCA != NULL && pcCert != NULL && pcPrivKey != NULL)
             {
@@ -119,7 +114,7 @@ static int prvInitConfig(NetIo_t *pxNet, const char *pcRootCA, const char *pcCer
             }
             else
             {
-                mbedtls_ssl_conf_authmode(&(pxNet->xConf), MBEDTLS_SSL_VERIFY_OPTIONAL);
+                mbedtls_ssl_conf_authmode(&(pxNet->xConf), MBEDTLS_SSL_VERIFY_NONE);
             }
         }
     }
@@ -195,7 +190,6 @@ NetIoHandle NetIo_create(void)
         mbedtls_entropy_init(&(pxNet->xEntropy));
 
         pxNet->uRecvTimeoutMs = DEFAULT_CONNECTION_TIMEOUT_MS;
-        pxNet->uSendTimeoutMs = DEFAULT_CONNECTION_TIMEOUT_MS;
 
         if (mbedtls_ctr_drbg_seed(&(pxNet->xCtrDrbg), mbedtls_entropy_func, &(pxNet->xEntropy), NULL, 0) != 0)
         {
@@ -328,38 +322,6 @@ int NetIo_recv(NetIoHandle xNetIoHandle, unsigned char *pBuffer, size_t uBufferS
     return res;
 }
 
-bool NetIo_isDataAvailable(NetIoHandle xNetIoHandle)
-{
-    NetIo_t *pxNet = (NetIo_t *)xNetIoHandle;
-    bool bDataAvailable = false;
-    struct timeval tv = {0};
-    fd_set read_fds = {0};
-    int fd = 0;
-
-    if (pxNet != NULL)
-    {
-        fd = pxNet->xFd.fd;
-        if (fd >= 0)
-        {
-            FD_ZERO(&read_fds);
-            FD_SET(fd, &read_fds);
-
-            tv.tv_sec = 0;
-            tv.tv_usec = 0;
-
-            if (select(fd + 1, &read_fds, NULL, NULL, &tv) >= 0)
-            {
-                if (FD_ISSET(fd, &read_fds))
-                {
-                    bDataAvailable = true;
-                }
-            }
-        }
-    }
-
-    return bDataAvailable;
-}
-
 int NetIo_setRecvTimeout(NetIoHandle xNetIoHandle, unsigned int uRecvTimeoutMs)
 {
     int res = NETIO_ERRNO_NONE;
@@ -373,41 +335,6 @@ int NetIo_setRecvTimeout(NetIoHandle xNetIoHandle, unsigned int uRecvTimeoutMs)
     {
         pxNet->uRecvTimeoutMs = (uint32_t)uRecvTimeoutMs;
         mbedtls_ssl_conf_read_timeout(&(pxNet->xConf), pxNet->uRecvTimeoutMs);
-    }
-
-    return res;
-}
-
-int NetIo_setSendTimeout(NetIoHandle xNetIoHandle, unsigned int uSendTimeoutMs)
-{
-    int res = NETIO_ERRNO_NONE;
-    NetIo_t *pxNet = (NetIo_t *)xNetIoHandle;
-    int fd = 0;
-    struct timeval tv = {0};
-
-    if (pxNet == NULL)
-    {
-        res = NETIO_ERRNO_INVALID_PARAMETER;
-    }
-    else
-    {
-        pxNet->uSendTimeoutMs = (uint32_t)uSendTimeoutMs;
-        fd = pxNet->xFd.fd;
-        tv.tv_sec = uSendTimeoutMs / 1000;
-        tv.tv_usec = (uSendTimeoutMs % 1000) * 1000;
-
-        if (fd < 0)
-        {
-            /* Do nothing when connection hasn't established. */
-        }
-        else if (setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO, (void *)&tv, sizeof(tv)) != 0)
-        {
-            res = NETIO_ERRNO_UNABLE_TO_SET_SEND_TIMEOUT;
-        }
-        else
-        {
-            /* nop */
-        }
     }
 
     return res;

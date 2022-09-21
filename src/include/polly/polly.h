@@ -29,7 +29,6 @@ typedef struct
     const char *pHost;
 
     unsigned int uRecvTimeoutMs;
-    unsigned int uSendTimeoutMs;
 } PollyServiceParameter_t;
 
 typedef struct

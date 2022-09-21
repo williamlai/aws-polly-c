@@ -3,7 +3,6 @@
 #include <string.h>
 
 #include <time.h>
-#include <sys/time.h>
 
 #include "polly/polly.h"
 
@@ -226,8 +225,7 @@ int Polly_synthesizeSpeech(PollyServiceParameter_t *pServPara, PollySynthesizeSp
                 {
                     res = POLLY_ERRNO_NET_CONNECT_FAILED;
                 }
-                else if (NetIo_setSendTimeout(xNetIo, pServPara->uSendTimeoutMs) != NETIO_ERRNO_NONE ||
-                        NetIo_setRecvTimeout(xNetIo, pServPara->uRecvTimeoutMs) != NETIO_ERRNO_NONE)
+                else if (NetIo_setRecvTimeout(xNetIo, pServPara->uRecvTimeoutMs) != NETIO_ERRNO_NONE)
                 {
                     res = POLLY_ERRNO_NET_CONFIG_FAILED;
                 }

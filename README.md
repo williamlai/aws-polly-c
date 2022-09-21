@@ -1,6 +1,6 @@
 # AWS Polly C
 
-AWS Polly C is a lightweight library of AWS Plly service for FreeRTOS/Embedded Linux.
+AWS Polly C is a lightweight library of AWS Polly service for FreeRTOS/Embedded Linux. This library doesn't provide full features of AWS Polly but only supports some key features of it.
 
 ## What is AWS Polly?
 
