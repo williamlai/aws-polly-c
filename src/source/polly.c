@@ -12,7 +12,7 @@
 
 #define DEFAULT_HTTP_RECV_BUFSIZE   2048
 
-static int prvGenDateTimeiso8601(char pDateISO8601[DATE_TIME_ISO_8601_FORMAT_STRING_SIZE])
+static int prvGenDateTimeIso8601(char pDateISO8601[DATE_TIME_ISO_8601_FORMAT_STRING_SIZE])
 {
     int res = POLLY_ERRNO_NONE;
     time_t xTimeUtcNow = {0};
@@ -95,7 +95,7 @@ static int prvSynthesizeSpeechRecv(NetIoHandle xNetIo, PollySynthesizeSpeechOutp
                 }
             }
 
-            if ((res = NetIo_recv(xNetIo, (unsigned char *)(pRecvBuf + uBytesTotalReceived), uRecvBufSize - uBytesTotalReceived, &uBytesReceived)) != NETIO_ERRNO_NONE)
+            if (NetIo_recv(xNetIo, (unsigned char *)(pRecvBuf + uBytesTotalReceived), uRecvBufSize - uBytesTotalReceived, &uBytesReceived) != NETIO_ERRNO_NONE)
             {
                 res = POLLY_ERRNO_NET_RECV_FAILED;
                 break;
@@ -111,9 +111,19 @@ static int prvSynthesizeSpeechRecv(NetIoHandle xNetIo, PollySynthesizeSpeechOutp
                 resHttpParser = Hp_parse(xHttpParser, pRecvBuf, uBytesTotalReceived, &uBytesParsed, &uHttpStatusCode, &pChunkLoc, &uChunkLen);
                 if (resHttpParser == HTTP_PARSER_ERRNO_NONE || resHttpParser == HTTP_PARSER_ERRNO_WANT_MORE_DATA)
                 {
-                    if (pOut->callback != NULL && pChunkLoc != NULL && uChunkLen > 0)
+                    if (uHttpStatusCode != 0)
                     {
-                        pOut->callback((uint8_t *)pChunkLoc, uChunkLen, pOut->pUserData);
+                        pOut->uStatusCode = uHttpStatusCode;
+                        if (pOut->uStatusCode / 100 != 2)
+                        {
+                            res = POLLY_ERRNO_HTTP_REQ_FAILURE;
+                            break;
+                        }
+                    }
+
+                    if (pOut->onDataCallback != NULL && pChunkLoc != NULL && uChunkLen > 0)
+                    {
+                        pOut->onDataCallback((uint8_t *)pChunkLoc, uChunkLen, pOut->pUserData);
                     }
 
                     /* Move the parsed data forward */
@@ -155,7 +165,7 @@ int Polly_synthesizeSpeech(PollyServiceParameter_t *pServPara, PollySynthesizeSp
 
     NetIoHandle xNetIo = NULL;
 
-    if ((res = prvGenDateTimeiso8601(pDateISO8601)) != POLLY_ERRNO_NONE)
+    if ((res = prvGenDateTimeIso8601(pDateISO8601)) != POLLY_ERRNO_NONE)
     {
         /* Propagate the error code */
     }
@@ -178,7 +188,7 @@ int Polly_synthesizeSpeech(PollyServiceParameter_t *pServPara, PollySynthesizeSp
         xSigV4Para.pPayload = pPayload;
         xSigV4Para.uPayloadLen = uPayloadLen;
 
-        if ((res = SigV4_Sign(&xSigV4Para, &pAuth, &uAuthLen)) != SIGV4_ERRNO_NONE)
+        if (SigV4_Sign(&xSigV4Para, &pAuth, &uAuthLen) != SIGV4_ERRNO_NONE)
         {
             res = POLLY_ERRNO_SIGN_FAILURE;
         }
@@ -229,7 +239,7 @@ int Polly_synthesizeSpeech(PollyServiceParameter_t *pServPara, PollySynthesizeSp
                 {
                     res = POLLY_ERRNO_NET_CONFIG_FAILED;
                 }
-                else if (NetIo_send(xNetIo, pHttpReq, uHttpReqLen) != NETIO_ERRNO_NONE)
+                else if (NetIo_send(xNetIo, (const unsigned char *)pHttpReq, uHttpReqLen) != NETIO_ERRNO_NONE)
                 {
                     res = POLLY_ERRNO_NET_SEND_FAILED;
                 }

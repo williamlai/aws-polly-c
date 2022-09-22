@@ -15,6 +15,7 @@
 #define POLLY_ERRNO_HTTP_100_CONTINUE_EXPECT_MORE   (-8)
 #define POLLY_ERRNO_HTTP_WANT_MORE                  (-9)
 #define POLLY_ERRNO_HTTP_PARSE_FAILURE              (-10)
+#define POLLY_ERRNO_HTTP_REQ_FAILURE                (-11)
 
 #define AWS_POLLY_SERVICE_NAME                      "polly"
 
@@ -46,8 +47,9 @@ typedef struct
 
 typedef struct
 {
-    int (*callback)(uint8_t *pData, size_t uLen, void *pUserData);
+    int (*onDataCallback)(uint8_t *pData, size_t uLen, void *pUserData);
     void *pUserData;
+    unsigned int uStatusCode;
 } PollySynthesizeSpeechOutput_t;
 
 int Polly_synthesizeSpeech(PollyServiceParameter_t *pServPara, PollySynthesizeSpeechParameter_t *pPara, PollySynthesizeSpeechOutput_t *pOut);

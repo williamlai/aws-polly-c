@@ -99,6 +99,7 @@ static int prvInitPollySynthesizeSpeechParameter(PollySynthesizeSpeechParameter_
 
 int main(int argc, char *argv[])
 {
+    int res = 0;
     const char *pOutputFilename = NULL;
     const char *pText = NULL;
     PollyServiceParameter_t xServPara = { 0 };
@@ -125,11 +126,20 @@ int main(int argc, char *argv[])
         return 0;
     }
 
-    xOut.callback = prvPollySynthesizeSpeechCallback;
+    xOut.onDataCallback = prvPollySynthesizeSpeechCallback;
     xOut.pUserData = fp;
+    xOut.uStatusCode = 0;
 
     printf("Polly synthesize speech begin...\n");
-    Polly_synthesizeSpeech(&xServPara, &xPara, &xOut);
+    if ((res = Polly_synthesizeSpeech(&xServPara, &xPara, &xOut)) != POLLY_ERRNO_NONE)
+    {
+        printf("Failed to execute Polly synthesize speech. (res:%d)\n", res);
+        if (xOut.uStatusCode != 0)
+        {
+            printf("HTTP status code: %u\n", xOut.uStatusCode);
+        }
+    }
+
     printf("Polly synthesize speech end\n");
 
     if (fp != NULL)
